@@ -3,6 +3,7 @@ import pandas as pd
 import cv2
 import glob
 from sklearn.utils import  shuffle
+from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import time
 import pickle
@@ -19,6 +20,7 @@ def load_pickle(path):
     with open(path,"rb") as file:
         obj = pickle.load(file)
         return obj
+
 
 def multi_rle_encode(img, **kwargs):
     '''
@@ -65,14 +67,18 @@ def rle_decode(mask_rle, shape=(768, 768)):
 
 def load_img(path):
     img = cv2.imread(path)
-    img = cv2.resize(img,(202,202))
-    return img/255.
+    if not config.TARGET_SIZE==config.ORIGIN_SIZE:
+        img_re = cv2.resize(img,config.TARGET_SIZE)
+    return img_re/255.
 
 def generate_mask(rle_list,shape=[768,768]):
     mask_all = np.zeros(shape=shape)
     for rle in rle_list:
         if rle==rle:
             mask_all += rle_decode(rle,shape=shape)
+    mask_all.reshape([768, 768, 1])
+    if not config.TARGET_SIZE == config.ORIGIN_SIZE:
+        cv2.resize(mask_all,config.TARGET_SIZE)
     return mask_all
 
 
@@ -90,8 +96,8 @@ def data_generator(img_paths,train_tf,batch_size=32, is_shuffle = True):
             labels = []
             for id in img_ids:
                 rle_list = train_tf.loc[train_tf['ImageId'] == id, 'EncodedPixels'].tolist()
-                labels.append(generate_mask(rle_list,shape=config.MASK_SHAPE))
-            yield np.array(features),np.array(labels).reshape([-1,202,202,1])
+                labels.append(generate_mask(rle_list))
+            yield np.array(features),np.array(labels)
 
 def visualize_imgs_with_masks(imgs,masks):
     num_img = len(imgs)
@@ -101,7 +107,22 @@ def visualize_imgs_with_masks(imgs,masks):
         plt.imshow(imgs[i])
         plt.imshow(masks[i],alpha=0.4)
 
+def withship_noship_split(train_tf):
+    train_tf_count = train_tf.groupby(["ImageId"]).count()
+    train_tf_count.rename(columns={"EncodedPixels": "ship_count"}, inplace=True)
+
+    ids_withship = train_tf_count.loc[train_tf_count["ship_count"] > 0].index.tolist()
+    ids_noship = train_tf_count.loc[train_tf_count["ship_count"] == 0].index.tolist()
+    return ids_withship, ids_noship
+
+def train_val_split(ids_withship,ids_noship):
+    train_ids_withship,val_ids_withship = train_test_split(ids_withship,test_size=0.05,random_state=1234)
+    train_ids_noship,val_ids_noship = train_test_split(ids_noship,test_size=0.02,random_state=1234)
+    return train_ids_withship+train_ids_noship, val_ids_withship+val_ids_noship
 
 
-
-
+# print(len(ids_withship))
+# print(len(ids_noship))
+train_tf = pd.read_csv(config.TRAIN_FILE)
+ids_withship,ids_noship = withship_noship_split(train_tf)
+train_val_split(ids_withship,ids_noship)
