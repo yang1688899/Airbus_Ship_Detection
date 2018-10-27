@@ -56,8 +56,8 @@ def network(input_layer, start_neurons, DropoutRatio=0.5):
     convm = residual_block(convm, start_neurons * 16, True)
 
     # 12 -> 25
-    # deconv4 = Conv2DTranspose(start_neurons * 8, (3, 3), strides=(2, 2), padding="same")(convm)
-    deconv4 = Conv2DTranspose(start_neurons * 8, (3, 3), strides=(2, 2), padding="valid")(convm)
+    deconv4 = Conv2DTranspose(start_neurons * 8, (3, 3), strides=(2, 2), padding="same")(convm)
+    # deconv4 = Conv2DTranspose(start_neurons * 8, (3, 3), strides=(2, 2), padding="valid")(convm)
     uconv4 = concatenate([deconv4, conv4])
     uconv4 = Dropout(DropoutRatio)(uconv4)
 
@@ -76,8 +76,8 @@ def network(input_layer, start_neurons, DropoutRatio=0.5):
     uconv3 = residual_block(uconv3, start_neurons * 4, True)
 
     # 50 -> 101
-    # deconv2 = Conv2DTranspose(start_neurons * 2, (3, 3), strides=(2, 2), padding="same")(uconv3)
-    deconv2 = Conv2DTranspose(start_neurons * 2, (3, 3), strides=(2, 2), padding="valid")(uconv3)
+    deconv2 = Conv2DTranspose(start_neurons * 2, (3, 3), strides=(2, 2), padding="same")(uconv3)
+    # deconv2 = Conv2DTranspose(start_neurons * 2, (3, 3), strides=(2, 2), padding="valid")(uconv3)
     uconv2 = concatenate([deconv2, conv2])
 
     uconv2 = Dropout(DropoutRatio)(uconv2)

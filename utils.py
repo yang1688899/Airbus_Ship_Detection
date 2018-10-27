@@ -76,10 +76,9 @@ def generate_mask(rle_list,shape=[768,768]):
     for rle in rle_list:
         if rle==rle:
             mask_all += rle_decode(rle,shape=shape)
-    mask_all.reshape([768, 768, 1])
     if not config.TARGET_SIZE == config.ORIGIN_SIZE:
-        cv2.resize(mask_all,config.TARGET_SIZE)
-    return mask_all
+        mask_all = cv2.resize(mask_all,config.TARGET_SIZE)
+    return np.expand_dims(mask_all,axis=2)
 
 
 def data_generator(img_paths,train_tf,batch_size=32, is_shuffle = True):
@@ -92,7 +91,7 @@ def data_generator(img_paths,train_tf,batch_size=32, is_shuffle = True):
             img_paths = shuffle(img_paths)
         for offset in range(0,num_sample,batch_size):
             features = [load_img(path) for path in img_paths[offset:offset+batch_size]]
-            img_ids = [path.split("\\")[-1] for path in img_paths[offset:offset+batch_size]]
+            img_ids = [path.split("/")[-1] for path in img_paths[offset:offset+batch_size]]
             labels = []
             for id in img_ids:
                 rle_list = train_tf.loc[train_tf['ImageId'] == id, 'EncodedPixels'].tolist()

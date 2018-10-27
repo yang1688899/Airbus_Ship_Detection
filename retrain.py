@@ -12,6 +12,7 @@ import config
 import network
 from loss_function import focal_dice_loss,my_iou_metric
 
+
 #save_file
 save_model_path = "./save/unet_384_facal_dice.model"
 
@@ -25,24 +26,21 @@ val_paths = [config.TRAIN_DIR+id for id in val_ids]
 train_gen = utils.data_generator(train_paths,train_tf,batch_size=config.BATCH_SIZE)
 val_gen = utils.data_generator(val_paths,train_tf,batch_size=config.BATCH_SIZE,is_shuffle=False)
 
-features,labels = next(train_gen)
-print(features.shape)
-print(labels.shape)
-#build model
-input_layer = Input(config.INPUT_SHAPE)
-output_layer = network.network(input_layer, 16,0.5)
-
-model = Model(input_layer, output_layer)
+#load model
+model = load_model(save_model_path,custom_objects={'focal_dice_loss': focal_dice_loss,
+                                                        'my_iou_metric': my_iou_metric})
 model.summary()
+print("train samples: %s"%len(train_ids))
+print("valid samples: %s"%len(val_ids))
 
-opt = optimizers.adam(lr=0.001)
+opt = optimizers.adam(lr=0.005)
 model.compile(loss=focal_dice_loss,optimizer=opt,metrics=[my_iou_metric])
 
 
 early_stopping = EarlyStopping(monitor='val_my_iou_metric', mode = 'max',patience=3, verbose=1)
 
-# model_checkpoint = ModelCheckpoint(save_model_path,monitor='val_my_iou_metric',
-#                                    mode = 'max',save_best_only=True, verbose=1)
+model_checkpoint = ModelCheckpoint(save_model_path,monitor='val_my_iou_metric',
+                                   mode = 'max',save_best_only=True, verbose=1)
 model_checkpoint = ModelCheckpoint(save_model_path)
 
 reduce_lr = ReduceLROnPlateau(monitor='val_my_iou_metric', mode = 'max',factor=0.5, patience=2, min_lr=0.00001, verbose=1)
@@ -58,5 +56,3 @@ history = model.fit_generator(train_gen,
                     verbose=2)
 
 utils.save_to_pickle(history,"history.p")
-
-
