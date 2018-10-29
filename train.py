@@ -21,13 +21,13 @@ ids_withship,ids_noship = utils.withship_noship_split(train_tf)
 train_ids,val_ids = utils.train_val_split(ids_withship,ids_noship)
 train_paths = [config.TRAIN_DIR+id for id in train_ids]
 val_paths = [config.TRAIN_DIR+id for id in val_ids]
+utils.save_to_pickle([train_ids,val_ids],"./split_ids.p")
 
 train_gen = utils.data_generator(train_paths,train_tf,batch_size=config.BATCH_SIZE)
 val_gen = utils.data_generator(val_paths,train_tf,batch_size=config.BATCH_SIZE,is_shuffle=False)
 
-features,labels = next(train_gen)
-print(features.shape)
-print(labels.shape)
+print("train samples: %s"%len(train_ids))
+print("valid samples: %s"%len(val_ids))
 #build model
 input_layer = Input(config.INPUT_SHAPE)
 output_layer = network.network(input_layer, 16,0.5)
@@ -39,14 +39,13 @@ opt = optimizers.adam(lr=0.001)
 model.compile(loss=focal_dice_loss,optimizer=opt,metrics=[my_iou_metric])
 
 
-early_stopping = EarlyStopping(monitor='val_my_iou_metric', mode = 'max',patience=3, verbose=1)
+early_stopping = EarlyStopping(monitor='val_my_iou_metric', mode = 'max',patience=5, verbose=1)
 
-# model_checkpoint = ModelCheckpoint(save_model_path,monitor='val_my_iou_metric',
-#                                    mode = 'max',save_best_only=True, verbose=1)
-model_checkpoint = ModelCheckpoint(save_model_path)
+model_checkpoint = ModelCheckpoint(save_model_path,monitor='val_my_iou_metric',
+                                   mode = 'max',save_best_only=True, verbose=1)
 
 reduce_lr = ReduceLROnPlateau(monitor='val_my_iou_metric', mode = 'max',factor=0.5, patience=2, min_lr=0.00001, verbose=1)
-epochs = 20
+epochs = 50
 
 history = model.fit_generator(train_gen,
                     # steps_per_epoch=ceil(len(train_paths)/ config.BATCH_SIZE),

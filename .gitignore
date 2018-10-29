@@ -2,3 +2,5 @@
 __pycache__
 keras.model
 save
+split_ids.p
+submit.csv

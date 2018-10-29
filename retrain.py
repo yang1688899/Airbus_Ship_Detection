@@ -33,7 +33,7 @@ model.summary()
 print("train samples: %s"%len(train_ids))
 print("valid samples: %s"%len(val_ids))
 
-opt = optimizers.adam(lr=0.005)
+opt = optimizers.adam(lr=0.001)
 model.compile(loss=focal_dice_loss,optimizer=opt,metrics=[my_iou_metric])
 
 
@@ -44,7 +44,7 @@ model_checkpoint = ModelCheckpoint(save_model_path,monitor='val_my_iou_metric',
 model_checkpoint = ModelCheckpoint(save_model_path)
 
 reduce_lr = ReduceLROnPlateau(monitor='val_my_iou_metric', mode = 'max',factor=0.5, patience=2, min_lr=0.00001, verbose=1)
-epochs = 20
+epochs = 50
 
 history = model.fit_generator(train_gen,
                     # steps_per_epoch=ceil(len(train_paths)/ config.BATCH_SIZE),
@@ -53,6 +53,7 @@ history = model.fit_generator(train_gen,
                     validation_steps=ceil(len(val_paths)/config.BATCH_SIZE),
                     epochs=epochs,
                     callbacks=[ model_checkpoint,reduce_lr,early_stopping],
-                    verbose=2)
+                    initial_epoch=8,
+                    verbose=1)
 
 utils.save_to_pickle(history,"history.p")

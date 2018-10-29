@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import time
 import pickle
 from skimage.morphology import label
+from skimage.transform import resize
 
 import config
 
@@ -21,6 +22,11 @@ def load_pickle(path):
         obj = pickle.load(file)
         return obj
 
+
+def upsample(img):
+    if config.ORIGIN_SIZE == config.TARGET_SIZE:
+        return img
+    return resize(img, (config.ORIGIN_SIZE, config.ORIGIN_SIZE), mode='constant', preserve_range=True)
 
 def multi_rle_encode(img, **kwargs):
     '''
@@ -68,7 +74,7 @@ def rle_decode(mask_rle, shape=(768, 768)):
 def load_img(path):
     img = cv2.imread(path)
     if not config.TARGET_SIZE==config.ORIGIN_SIZE:
-        img_re = cv2.resize(img,config.TARGET_SIZE)
+        img_re = cv2.resize(img,(config.TARGET_SIZE,config.TARGET_SIZE))
     return img_re/255.
 
 def generate_mask(rle_list,shape=[768,768]):
@@ -77,7 +83,7 @@ def generate_mask(rle_list,shape=[768,768]):
         if rle==rle:
             mask_all += rle_decode(rle,shape=shape)
     if not config.TARGET_SIZE == config.ORIGIN_SIZE:
-        mask_all = cv2.resize(mask_all,config.TARGET_SIZE)
+        mask_all = cv2.resize(mask_all,(config.TARGET_SIZE,config.TARGET_SIZE))
     return np.expand_dims(mask_all,axis=2)
 
 
