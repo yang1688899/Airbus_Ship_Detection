@@ -18,8 +18,10 @@ save_model_path = "./save/unet_384_facal_dice.model"
 
 #data
 train_tf = pd.read_csv(config.TRAIN_FILE)
-ids_withship,ids_noship = utils.withship_noship_split(train_tf)
-train_ids,val_ids = utils.train_val_split(ids_withship,ids_noship)
+
+save_obj = utils.load_pickle("./split_ids.p")
+train_ids,val_ids = save_obj
+
 train_paths = [config.TRAIN_DIR+id for id in train_ids]
 val_paths = [config.TRAIN_DIR+id for id in val_ids]
 
@@ -33,7 +35,7 @@ model.summary()
 print("train samples: %s"%len(train_ids))
 print("valid samples: %s"%len(val_ids))
 
-opt = optimizers.adam(lr=0.001)
+opt = optimizers.adam(lr=0.00025)
 model.compile(loss=focal_dice_loss,optimizer=opt,metrics=[my_iou_metric])
 
 
@@ -41,7 +43,6 @@ early_stopping = EarlyStopping(monitor='val_my_iou_metric', mode = 'max',patienc
 
 model_checkpoint = ModelCheckpoint(save_model_path,monitor='val_my_iou_metric',
                                    mode = 'max',save_best_only=True, verbose=1)
-model_checkpoint = ModelCheckpoint(save_model_path)
 
 reduce_lr = ReduceLROnPlateau(monitor='val_my_iou_metric', mode = 'max',factor=0.5, patience=2, min_lr=0.00001, verbose=1)
 epochs = 50
@@ -53,7 +54,7 @@ history = model.fit_generator(train_gen,
                     validation_steps=ceil(len(val_paths)/config.BATCH_SIZE),
                     epochs=epochs,
                     callbacks=[ model_checkpoint,reduce_lr,early_stopping],
-                    initial_epoch=8,
-                    verbose=1)
+                    initial_epoch=15,
+                    verbose=2)
 
 utils.save_to_pickle(history,"history.p")
