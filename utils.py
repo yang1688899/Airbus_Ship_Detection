@@ -9,6 +9,7 @@ import time
 import pickle
 from skimage.morphology import label
 from skimage.transform import resize
+import random
 
 import config
 
@@ -74,8 +75,8 @@ def rle_decode(mask_rle, shape=(768, 768)):
 def load_img(path):
     img = cv2.imread(path)
     if not config.TARGET_SIZE==config.ORIGIN_SIZE:
-        img_re = cv2.resize(img,(config.TARGET_SIZE,config.TARGET_SIZE))
-    return img_re/255.
+        img = cv2.resize(img,(config.TARGET_SIZE,config.TARGET_SIZE))
+    return img/255.
 
 def generate_mask(rle_list,shape=[768,768]):
     mask_all = np.zeros(shape=shape)
@@ -102,6 +103,7 @@ def data_generator(img_paths,train_tf,batch_size=32, is_shuffle = True):
             for id in img_ids:
                 rle_list = train_tf.loc[train_tf['ImageId'] == id, 'EncodedPixels'].tolist()
                 labels.append(generate_mask(rle_list))
+
             yield np.array(features),np.array(labels)
 
 def visualize_imgs_with_masks(imgs,masks):

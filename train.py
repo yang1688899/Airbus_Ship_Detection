@@ -21,19 +21,22 @@ ids_withship,ids_noship = utils.withship_noship_split(train_tf)
 train_ids,val_ids = utils.train_val_split(ids_withship,ids_noship)
 train_paths = [config.TRAIN_DIR+id for id in train_ids]
 val_paths = [config.TRAIN_DIR+id for id in val_ids]
-utils.save_to_pickle([train_ids,val_ids],"./split_ids.p")
+utils.save_to_pickle({"train_ids":train_ids,"val_ids":val_ids,"ids_withship":ids_withship,"ids_noship":ids_noship},"./split_ids.p")
 
 train_gen = utils.data_generator(train_paths,train_tf,batch_size=config.BATCH_SIZE)
 val_gen = utils.data_generator(val_paths,train_tf,batch_size=config.BATCH_SIZE,is_shuffle=False)
 
+
 print("train samples: %s"%len(train_ids))
 print("valid samples: %s"%len(val_ids))
+
 #build model
 input_layer = Input(config.INPUT_SHAPE)
 output_layer = network.network(input_layer, 16,0.5)
 
 model = Model(input_layer, output_layer)
 model.summary()
+
 
 opt = optimizers.adam(lr=0.001)
 model.compile(loss=focal_dice_loss,optimizer=opt,metrics=[my_iou_metric])
